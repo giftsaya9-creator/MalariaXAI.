@@ -1,110 +1,162 @@
 import streamlit as st
-import tensorflow as tf
-import numpy as np
-from PIL import Image
 import time
 
-# --- PAGE CONFIGURATION ---
-st.set_page_config(page_title="MalariaXAI | Diagnostic Tool", page_icon="🦟", layout="wide")
+# 1. Page Config
+st.set_page_config(page_title="MalariaXAI Prototype", layout="wide")
 
-# --- CUSTOM CSS FOR BEAUTIFICATION ---
+# 2. Custom CSS to make it look like Phone Mockups
 st.markdown("""
-    <style>
-    /* Main container background */
+<style>
+    /* Hide the Streamlit header and menu */
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    /* Dark background for the whole page */
     .stApp {
-        background-color: #f4f7f6;
+        background-color: #2b2b2b;
     }
-    /* Title styling */
-    h1 {
-        color: #1E3A8A;
-        font-family: 'Helvetica Neue', sans-serif;
-        font-weight: 700;
-        margin-bottom: 0px;
-    }
-    .subtitle {
-        color: #6B7280;
-        font-size: 16px;
-        margin-bottom: 30px;
-    }
-    /* Card styling for results */
-    .result-card {
+    
+    /* Phone Container Styling */
+    .phone-container {
         background-color: white;
+        border-radius: 30px;
+        border: 12px solid #1a1a1a;
         padding: 20px;
-        border-radius: 15px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        min-height: 600px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        text-align: center;
         margin-bottom: 20px;
     }
-    </style>
+    
+    /* Top Bar of the App */
+    .app-header {
+        background-color: #2b5797;
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        font-family: sans-serif;
+    }
+    
+    /* Buttons inside the phone */
+    .phone-btn {
+        background-color: white;
+        border: 1px solid #ccc;
+        padding: 12px;
+        margin: 8px 0;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        color: #333;
+        width: 100%;
+    }
+    .scan-btn {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+    }
+    .save-btn {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        width: 45%;
+        display: inline-block;
+    }
+    .flag-btn {
+        background-color: white;
+        color: #d9534f;
+        border: 1px solid #d9534f;
+        width: 45%;
+        display: inline-block;
+        margin-left: 5%;
+    }
+    
+    /* Text colors */
+    .red-text { color: #d9534f; font-weight: bold; font-size: 20px; margin-top: 15px;}
+    .small-text { color: gray; font-size: 12px; }
+    
+    /* Camera placeholder */
+    .camera-box {
+        border: 2px dashed #999;
+        height: 250px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #999;
+        margin: 20px 0;
+    }
+    
+    /* History rows */
+    .history-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px;
+        border-bottom: 1px solid #eee;
+        font-size: 14px;
+        color: #333;
+    }
+    .highlight-row {
+        background-color: #fff3cd;
+    }
+</style>
 """, unsafe_allow_html=True)
 
-# --- HEADER SECTION ---
-st.markdown("<h1>🦟 MalariaXAI Diagnostic Center</h1>", unsafe_allow_html=True)
-st.markdown("<p class='subtitle'><b>Explainable AI Prototype</b> | Developed by Gift Saya (202302133)</p>", unsafe_allow_html=True)
-st.divider()
+st.markdown("<h2 style='text-align: center; color: white;'>Figure 2.2: Mock-up of the home, result and history screens</h2>", unsafe_allow_html=True)
 
-# --- MAIN LAYOUT ---
-left_col, right_col = st.columns([1, 1], gap="large")
+# Create 3 columns for the 3 screens
+col1, col2, col3 = st.columns(3)
 
-with left_col:
-    st.subheader("1. Upload Blood Smear")
-    st.write("Select a microscopic image to analyze.")
-    
-    uploaded_file = st.file_uploader("", type=["jpg", "png", "jpeg"])
-    
-    if uploaded_file is not None:
-        image = Image.open(uploaded_file).convert('RGB')
-        st.image(image, caption='Uploaded Image', use_container_width=True)
+# --- SCREEN 1: HOME ---
+with col1:
+    st.markdown("""
+    <div class="phone-container">
+        <div class="app-header">MalariaXAI</div>
+        <div class="camera-box">[ camera view ]</div>
+        <div class="phone-btn scan-btn">Scan smear</div>
+        <div class="phone-btn">Choose from gallery</div>
+        <div class="phone-btn">History</div>
+        <p class="small-text" style="color:#d9534f; margin-top: 30px;">Decision-support tool only</p>
+        <p class="small-text" style="margin-top: 40px;">(a) Home / capture</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-with right_col:
-    st.subheader("2. AI Analysis & Explanation")
-    
-    if uploaded_file is not None:
-        with st.spinner('🔄 Running MobileNetV2 inference...'):
-            time.sleep(1.5) # Simulating processing time
-            
-            # --- REAL AI LOGIC (Uncomment when model is uploaded) ---
-            # img = image.resize((224, 224))
-            # img_array = np.array(img) / 255.0
-            # img_array = np.expand_dims(img_array, axis=0)
-            # prediction_prob = model.predict(img_array)[0][0]
-            
-            # --- MOCK LOGIC FOR DEMO ---
-            prediction_prob = 0.965 
-            
-            if prediction_prob > 0.5:
-                label = "PARASITIZED"
-                confidence = prediction_prob * 100
-                color = "#ef4444" # Red
-                bg_color = "#fee2e2"
-            else:
-                label = "UNINFECTED"
-                confidence = (1 - prediction_prob) * 100
-                color = "#22c55e" # Green
-                bg_color = "#dcfce7"
-
-        # --- RESULTS CARD ---
-        st.markdown(f"""
-            <div style="background-color: {bg_color}; padding: 20px; border-radius: 10px; border-left: 5px solid {color}; margin-bottom: 20px;">
-                <h3 style="color: {color}; margin: 0;">{label}</h3>
-                <p style="margin: 5px 0 0 0; color: #333;">Confidence Level: <b>{confidence:.1f}%</b></p>
-                <p style="margin: 5px 0 0 0; color: #555; font-size: 14px;">Processed on device: 0.4s</p>
-            </div>
-        """, unsafe_allow_html=True)
+# --- SCREEN 2: RESULT ---
+with col2:
+    st.markdown("""
+    <div class="phone-container">
+        <div class="app-header">Result</div>
+        <img src="https://raw.githubusercontent.com/tensorflow/examples/master/lite/examples/image_classification/android/app/src/main/res/drawable/ic_launcher_background.png" style="width: 200px; height: 200px; border-radius: 50%; object-fit: cover; margin-bottom: 10px;" />
+        <!-- Note: The image above is a placeholder. If you want your actual heatmap, you need to use st.image() below instead of raw HTML -->
         
-        # --- GRAD-CAM SECTION ---
-        st.write("### 🧠 Why did the AI make this decision?")
-        st.write("The Grad-CAM heatmap below highlights the regions (red) that influenced the model's prediction.")
+        <div class="red-text">PARASITISED</div>
+        <p class="small-text">Confidence: 0.96 (example)</p>
+        <p class="small-text">Time on phone: 0.4 s (example)</p>
+        <p class="small-text" style="color: #d9534f;">Red = region that drove the decision</p>
         
-        try:
-            st.image("heatmap.jpg", caption="Grad-CAM Localization", use_container_width=True)
-        except:
-            st.warning("⚠️ Heatmap image ('heatmap.jpg') not found in repository. Please upload it.")
-            
-        st.info("💡 **Clinical Note:** This tool is a decision-support system. Always confirm with a laboratory professional.")
-        
-    else:
-        st.info("👈 Please upload an image on the left to begin analysis.")
+        <div style="margin-top: 30px;">
+            <div class="phone-btn save-btn">Save</div>
+            <div class="phone-btn flag-btn">Flag wrong</div>
+        </div>
+        <p class="small-text" style="margin-top: 40px;">(b) Result with Grad-CAM</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-# --- FOOTER ---
-st.divider()
-st.markdown("<p style='text-align: center; color: gray; font-size: 12px;'>Mulungushi University | School of Engineering and Technology | 2026</p>", unsafe_allow_html=True)
+# --- SCREEN 3: HISTORY ---
+with col3:
+    st.markdown("""
+    <div class="phone-container">
+        <div class="app-header">History</div>
+        <div class="history-row"><span>001</span><span>Parasitised</span><span>0.97</span></div>
+        <div class="history-row"><span>002</span><span>Uninfected</span><span>0.99</span></div>
+        <div class="history-row highlight-row"><span>003</span><span>Uninfected</span><span>0.62</span></div>
+        <div class="history-row"><span>004</span><span>Parasitised</span><span>0.91</span></div>
+        <div class="history-row"><span>005</span><span>Uninfected</span><span>0.95</span></div>
+        
+        <p class="small-text" style="text-align: left; margin-top: 40px; font-style: italic; color: #a0a0a0;">
+            Highlighted row = flagged or low-confidence case for review
+        </p>
+        <p class="small-text" style="margin-top: 20px;">(c) History and review</p>
+    </div>
+    """, unsafe_allow_html=True)
