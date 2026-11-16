@@ -1,149 +1,164 @@
 import streamlit as st
-import tensorflow as tf
-import numpy as np
-from PIL import Image
-import time 
 
-# --- PAGE CONFIGURATION ---
-st.set_page_config(page_title="MalariaXAI Diagnostic", page_icon="🦟", layout="wide")
+# 1. Page Config
+st.set_page_config(page_title="MalariaXAI Prototype", layout="wide")
 
-# --- CUSTOM CSS FOR BEAUTIFICATION ---
+# 2. Custom CSS to make it look like Phone Mockups
 st.markdown("""
-    <style>
-    .stApp { background-color: #f8fafc; }
-    h1 { color: #0f172a; font-family: 'Helvetica Neue', sans-serif; font-weight: 800; }
-    .subtitle { color: #64748b; font-size: 16px; margin-bottom: 30px; }
-    .result-card { padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-    .parasitized { background-color: #fef2f2; border-left: 6px solid #ef4444; }
-    .uninfected { background-color: #f0fdf4; border-left: 6px solid #22c55e; }
-    .metric-title { font-size: 14px; color: #64748b; font-weight: 600; margin-bottom: 5px; }
-    .metric-value { font-size: 24px; font-weight: 800; color: #1e293b; }
-    </style>
+<style>
+    /* Hide the Streamlit header and menu */
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    /* Dark background for the whole page */
+    .stApp {
+        background-color: #1e1e24;
+    }
+    
+    /* Phone Container Styling */
+    .phone-container {
+        background-color: #f4f6f9;
+        border-radius: 30px;
+        border: 12px solid #000000;
+        padding: 20px;
+        min-height: 650px;
+        box-shadow: 0 15px 30px rgba(0,0,0,0.6);
+        text-align: center;
+        margin-bottom: 20px;
+        position: relative;
+    }
+    
+    /* Top Bar of the App */
+    .app-header {
+        background-color: #2b5797;
+        color: white;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 18px;
+        margin-bottom: 25px;
+        font-family: sans-serif;
+    }
+    
+    /* Buttons inside the phone */
+    .phone-btn {
+        background-color: white;
+        border: 1px solid #ccc;
+        padding: 14px;
+        margin: 10px 0;
+        border-radius: 8px;
+        font-size: 15px;
+        color: #333;
+        width: 100%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .scan-btn {
+        background-color: #27ae60;
+        color: white;
+        border: none;
+    }
+    .save-btn {
+        background-color: #27ae60;
+        color: white;
+        border: none;
+        width: 45%;
+        display: inline-block;
+    }
+    .flag-btn {
+        background-color: white;
+        color: #c0392b;
+        border: 1px solid #c0392b;
+        width: 45%;
+        display: inline-block;
+        margin-left: 5%;
+    }
+    
+    /* Text colors */
+    .red-text { color: #c0392b; font-weight: 900; font-size: 22px; margin-top: 15px; letter-spacing: 1px;}
+    .small-text { color: #7f8c8d; font-size: 13px; }
+    
+    /* Camera placeholder */
+    .camera-box {
+        border: 2px dashed #bdc3c7;
+        background-color: #ecf0f1;
+        height: 250px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #95a5a6;
+        margin: 25px 0;
+        border-radius: 10px;
+    }
+    
+    /* History rows */
+    .history-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 15px;
+        border-bottom: 1px solid #e0e0e0;
+        font-size: 14px;
+        color: #333;
+    }
+    .highlight-row {
+        background-color: #fcf3cf;
+    }
+</style>
 """, unsafe_allow_html=True)
 
-# --- HEADER ---
-st.markdown("<h1>🦟 MalariaXAI Diagnostic Center</h1>", unsafe_allow_html=True)
-st.markdown("<p class='subtitle'><b>Explainable AI-Based Malaria Parasite Detection System</b> | Gift Saya (202302133)</p>", unsafe_allow_html=True)
-st.divider()
+st.markdown("<h2 style='text-align: center; color: white; margin-bottom: 40px;'>Mobile App Interface Prototype</h2>", unsafe_allow_html=True)
 
-# --- LOAD MODEL ---
-@st.cache_resource
-def load_model():
-    try:
-        # Load the model you uploaded to GitHub
-        model = tf.keras.models.load_model('malaria_model.keras')
-        return model
-    except Exception as e:
-        st.error(f"Error loading model: {e}. Please ensure 'malaria_model.keras' is in the repository.")
-        return None
+# Create 3 columns for the 3 screens
+col1, col2, col3 = st.columns(3)
 
-model = load_model()
-
-# --- GRAD-CAM FUNCTION ---
-def make_gradcam_heatmap(img_array, model, last_conv_layer_name):
-    # Create a model that maps the input image to the activations of the last conv layer
-    grad_model = tf.keras.models.Model(
-        [model.inputs], [model.get_layer(last_conv_layer_name).output, model.output]
-    )
-
-    with tf.GradientTape() as tape:
-        last_conv_layer_output, preds = grad_model(img_array)
-        class_channel = preds[:, 0]
-
-    grads = tape.gradient(class_channel, last_conv_layer_output)
-    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
-    last_conv_layer_output = last_conv_layer_output[0]
-    heatmap = last_conv_layer_output @ pooled_grads[..., tf.newaxis]
-    heatmap = tf.squeeze(heatmap)
-    heatmap = tf.maximum(heatmap, 0) / tf.math.reduce_max(heatmap)
-    return heatmap.numpy()
-
-# --- MAIN LAYOUT ---
-col1, col2 = st.columns([1, 1.2], gap="large")
-
+# --- SCREEN 1: HOME ---
 with col1:
-    st.subheader("📸 1. Upload Sample")
-    uploaded_file = st.file_uploader("Upload a microscopic blood smear image", type=["jpg", "png", "jpeg"])
-    
-    if uploaded_file is not None:
-        image = Image.open(uploaded_file).convert('RGB')
-        st.image(image, caption='Uploaded Image', use_container_width=True)
+    st.markdown("""
+    <div class="phone-container">
+        <div class="app-header">MalariaXAI</div>
+        <div class="camera-box">[ camera view ]</div>
+        <div class="phone-btn scan-btn">Scan smear</div>
+        <div class="phone-btn">Choose from gallery</div>
+        <div class="phone-btn">History</div>
+        <p class="small-text" style="color:#c0392b; margin-top: 30px;">Decision-support tool only</p>
+        <p class="small-text" style="position: absolute; bottom: 10px; left: 0; width: 100%;">(a) Home / capture</p>
+    </div>
+    """, unsafe_allow_html=True)
 
+# --- SCREEN 2: RESULT ---
 with col2:
-    st.subheader("🔬 2. AI Analysis & Explanation")
-    
-    if uploaded_file is not None and model is not None:
-        with st.spinner('Analyzing image with MobileNetV2...'):
-            time.sleep(0.5) # Small delay for UX
-            
-            # Preprocess
-            img = image.resize((224, 224))
-            img_array = np.array(img) / 255.0
-            img_array_expanded = np.expand_dims(img_array, axis=0)
-            
-            # Predict
-            prediction_prob = model.predict(img_array_expanded)[0][0]
-            
-            # Determine result
-            if prediction_prob > 0.5:
-                label = "PARASITIZED"
-                confidence = prediction_prob * 100
-                card_class = "parasitized"
-            else:
-                label = "UNINFECTED"
-                confidence = (1 - prediction_prob) * 100
-                card_class = "uninfected"
+    st.markdown("""
+    <div class="phone-container">
+        <div class="app-header">Result</div>
+        <div style="width: 180px; height: 180px; background: radial-gradient(circle, red, blue, yellow); border-radius: 50%; margin: 0 auto; box-shadow: 0 4px 8px rgba(0,0,0,0.3);"></div>
+        
+        <div class="red-text">PARASITISED</div>
+        <p class="small-text" style="margin-top: 10px;">Confidence: 0.96 (example)</p>
+        <p class="small-text">Time on phone: 0.4 s (example)</p>
+        <p class="small-text" style="color: #c0392b; margin-top: 10px;">Red = region that drove the decision</p>
+        
+        <div style="margin-top: 40px;">
+            <div class="phone-btn save-btn">Save</div>
+            <div class="phone-btn flag-btn">Flag wrong</div>
+        </div>
+        <p class="small-text" style="position: absolute; bottom: 10px; left: 0; width: 100%;">(b) Result with Grad-CAM</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-        # --- DISPLAY RESULT CARD ---
-        st.markdown(f"""
-            <div class="result-card {card_class}">
-                <div class="metric-title">Diagnosis</div>
-                <div class="metric-value" style="color: {'#ef4444' if label == 'PARASITIZED' else '#22c55e'};">{label}</div>
-                <br>
-                <div style="display: flex; gap: 40px;">
-                    <div>
-                        <div class="metric-title">Confidence</div>
-                        <div class="metric-value">{confidence:.1f}%</div>
-                    </div>
-                    <div>
-                        <div class="metric-title">Inference Time</div>
-                        <div class="metric-value">~0.4s</div>
-                    </div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+# --- SCREEN 3: HISTORY ---
+with col3:
+    st.markdown("""
+    <div class="phone-container">
+        <div class="app-header">History</div>
+        <div class="history-row"><span>001</span><span>Parasitised</span><span>0.97</span></div>
+        <div class="history-row"><span>002</span><span>Uninfected</span><span>0.99</span></div>
+        <div class="history-row highlight-row"><span>003</span><span>Uninfected</span><span>0.62</span></div>
+        <div class="history-row"><span>004</span><span>Parasitised</span><span>0.91</span></div>
+        <div class="history-row"><span>005</span><span>Uninfected</span><span>0.95</span></div>
         
-        # --- GENERATE GRAD-CAM ---
-        st.write("### 🧠 AI Explanation (Grad-CAM)")
-        st.write("The heatmap below shows where the AI focused to make its decision (Red = High Focus).")
-        
-        try:
-            # Find the last conv layer of MobileNetV2
-            base_model = model.layers[0]
-            last_conv_layer_name = base_model.layers[-3].name 
-            
-            # Generate heatmap
-            heatmap = make_gradcam_heatmap(img_array_expanded, base_model, last_conv_layer_name)
-            
-            # Overlay heatmap on original image
-            img_cv = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-            heatmap_resized = cv2.resize(heatmap, (img_cv.shape[1], img_cv.shape[0]))
-            heatmap_colored = cv2.applyColorMap(np.uint8(255 * heatmap_resized), cv2.COLORMAP_JET)
-            superimposed = cv2.addWeighted(img_cv, 0.6, heatmap_colored, 0.4, 0)
-            superimposed = cv2.cvtColor(superimposed, cv2.COLOR_BGR2RGB)
-            
-            st.image(superimposed, caption="Grad-CAM: Red regions drove the prediction", use_container_width=True)
-            
-        except Exception as e:
-            st.warning("Could not generate heatmap. Ensure the model layer names match.")
-        
-        st.info("💡 **Clinical Note:** This tool is a decision-support system. Always confirm with a laboratory professional.")
-    
-    elif model is None:
-        st.warning("Waiting for model to load...")
-    else:
-        st.info("👈 Please upload an image on the left to begin analysis.")
-
-# --- FOOTER ---
-st.divider()
-st.markdown("<p style='text-align: center; color: gray; font-size: 12px;'>Mulungushi University | School of Engineering and Technology | 2026</p>", unsafe_allow_html=True)
+        <p class="small-text" style="text-align: left; margin-top: 30px; font-style: italic; color: #95a5a6; padding: 0 15px;">
+            Highlighted row = flagged or low-confidence case for review
+        </p>
+        <p class="small-text" style="position: absolute; bottom: 10px; left: 0; width: 100%;">(c) History and review</p>
+    </div>
+    """, unsafe_allow_html=True)
