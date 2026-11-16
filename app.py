@@ -19,6 +19,12 @@ st.markdown("""
         color: #1E3A8A;
         font-family: 'Helvetica Neue', sans-serif;
         font-weight: 700;
+        margin-bottom: 0px;
+    }
+    .subtitle {
+        color: #6B7280;
+        font-size: 16px;
+        margin-bottom: 30px;
     }
     /* Card styling for results */
     .result-card {
@@ -28,21 +34,12 @@ st.markdown("""
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         margin-bottom: 20px;
     }
-    /* Success/Error box styling */
-    .stAlert {
-        border-radius: 10px;
-    }
     </style>
 """, unsafe_allow_html=True)
 
 # --- HEADER SECTION ---
-col1, col2 = st.columns([1, 8])
-with col1:
-    st.image("https://cdn-icons-png.flaticon.com/512/2933/2933245.png", width=60) # Mosquito icon
-with col2:
-    st.title("MalariaXAI Diagnostic Center")
-    st.markdown("**Explainable AI Prototype** | Developed by Gift Saya (202302133)")
-
+st.markdown("<h1>🦟 MalariaXAI Diagnostic Center</h1>", unsafe_allow_html=True)
+st.markdown("<p class='subtitle'><b>Explainable AI Prototype</b> | Developed by Gift Saya (202302133)</p>", unsafe_allow_html=True)
 st.divider()
 
 # --- MAIN LAYOUT ---
