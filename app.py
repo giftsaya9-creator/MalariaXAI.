@@ -2,8 +2,7 @@ import streamlit as st
 import tensorflow as tf
 import numpy as np
 from PIL import Image
-import time
-import cv2
+import time 
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="MalariaXAI Diagnostic", page_icon="🦟", layout="wide")
